@@ -53,10 +53,8 @@ export function useHistory(initialNodes: Node[], initialEdges: Edge[]) {
                 setHistory((prev) => prev.slice(0, -1)); // Remove the last state from the history.
 
                 const previousState = history[history.length - 2]; // Get the previous state.
-                if (previousState) {
-                    setNodes(previousState.nodes); // Restore nodes to the previous state.
-                    setEdges(previousState.edges); // Restore edges to the previous state.
-                }
+                setNodes(previousState.nodes); // Restore nodes to the previous state.
+                setEdges(previousState.edges); // Restore edges to the previous state.
             }
         },
         [history]

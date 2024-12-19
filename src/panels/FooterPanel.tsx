@@ -1,42 +1,38 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useReactFlow } from "@xyflow/react"; // Hook to interact with the React Flow instance.
-import { FiZoomIn, FiZoomOut, FiMaximize, FiTerminal, FiX } from "react-icons/fi"; // Icons for actions.
-import { FaChevronDown, FaChevronUp, FaCheckCircle } from "react-icons/fa"; // Icons for toggling and status indicators.
+import { useReactFlow } from "@xyflow/react";
+import { FiZoomIn, FiZoomOut, FiMaximize, FiTerminal, FiX } from "react-icons/fi";
+import { FaChevronDown, FaChevronUp, FaCheckCircle } from "react-icons/fa";
+import { useGlobalState } from "../context/StateContext"; // Import the global state hook
 
-interface FooterPanelProps {
-  results: Record<string, any>; // Results from workflow execution, keyed by node ID.
-  isExecuting: boolean; // Boolean indicating if the workflow is currently executing.
-}
+export const FooterPanel: React.FC = () => {
+  const { workflowResults: results, isExecuting } = useGlobalState(); // Access workflow results and execution state
+  const { zoomIn, zoomOut, fitView, getZoom } = useReactFlow(); // React Flow zoom actions
+  const [zoomLevel, setZoomLevel] = useState<number>(100); // Current zoom level as a percentage
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false); // Whether the console is open
+  const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({}); // Tracks expanded result details
 
-// Footer Panel Component
-export const FooterPanel: React.FC<FooterPanelProps> = ({ results, isExecuting }) => {
-  const { zoomIn, zoomOut, fitView, getZoom } = useReactFlow(); // React Flow actions and zoom level.
-  const [zoomLevel, setZoomLevel] = useState<number>(100); // Current zoom level as a percentage.
-  const [isConsoleOpen, setIsConsoleOpen] = useState(false); // Whether the console panel is open.
-  const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({}); // Tracks expanded state of result details.
+  const scrollContainerRef = useRef<HTMLDivElement>(null); // Reference to the scrollable container
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null); // Reference to the scrollable container.
-
-  // Toggle the visibility of the console panel.
+  // Toggle the visibility of the console panel
   const toggleConsole = () => setIsConsoleOpen((prev) => !prev);
 
-  // Toggle the visibility of details for a specific node's result.
+  // Toggle the visibility of details for a specific node's result
   const toggleDetails = (nodeId: string) => {
     setOpenDetails((prev) => ({ ...prev, [nodeId]: !prev[nodeId] }));
   };
 
-  // Open the console panel automatically when execution starts.
+  // Open the console panel automatically when execution starts
   useEffect(() => {
     if (isExecuting) {
       setIsConsoleOpen(true);
     }
   }, [isExecuting]);
 
-  // Update zoom level periodically by querying the React Flow instance.
+  // Update zoom level periodically by querying the React Flow instance
   useEffect(() => {
     const handleZoomChange = () => setZoomLevel(Math.round(getZoom() * 100));
-    const zoomInterval = setInterval(handleZoomChange, 200); // Update every 200ms.
-    return () => clearInterval(zoomInterval); // Cleanup the interval on unmount.
+    const zoomInterval = setInterval(handleZoomChange, 200); // Update every 200ms
+    return () => clearInterval(zoomInterval); // Cleanup interval on unmount
   }, [getZoom]);
 
   return (
@@ -49,7 +45,6 @@ export const FooterPanel: React.FC<FooterPanelProps> = ({ results, isExecuting }
               <h3 className="text-lg font-bold text-white flex gap-3 items-center">
                 <div className="w-7 h-7 flex justify-center items-center">
                   {isExecuting ? (
-                    // Spinner while workflow is executing.
                     <svg
                       aria-hidden="true"
                       className="inline w-6 h-6 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
@@ -67,7 +62,6 @@ export const FooterPanel: React.FC<FooterPanelProps> = ({ results, isExecuting }
                       />
                     </svg>
                   ) : (
-                    // Success icon when workflow is completed.
                     <FaCheckCircle size={23} className="text-neutral-400" />
                   )}
                 </div>

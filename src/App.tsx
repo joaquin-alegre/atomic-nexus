@@ -1,87 +1,27 @@
-import { useMemo, useState, useRef, useCallback } from 'react';
-import {
-  addEdge,
-  useNodesState,
-  useEdgesState,
-  ReactFlowProvider,
-  applyEdgeChanges,
-  applyNodeChanges,
-  Panel,
-} from '@xyflow/react'; // React Flow hooks and utilities.
+import React, { useEffect } from "react";
+import { NodesPanel } from "./panels/NodesPanel";
+import { FlowCanvas } from "./components/FlowCanvas";
+import { FooterPanel } from "./panels/FooterPanel";
+import { useGlobalState } from "./context/StateContext"; // Import global state hook
+import { initialNodes } from "./nodes"; // Import initial nodes
+import { edgeTypes, initialEdges } from "./edges"; // Import initial edges
+import { Panel, ReactFlowProvider } from "@xyflow/react";
+import { ActionsPanel } from "./panels/ActionsPanel";
 import '@xyflow/react/dist/style.css'; // React Flow styles.
-import { FlowCanvas } from './components/FlowCanvas'; // Main canvas for the flow editor.
-
-import { initialNodes, nodeTypes } from './nodes'; // Initial nodes and custom node types.
-import { initialEdges } from './edges'; // Initial edges.
-import { NodesPanel } from './panels/NodesPanel'; // Panel for adding new nodes.
-import { useHistory } from './hooks/useHistory'; // Custom hook for undo/redo functionality.
-import { useDragAndDrop } from './hooks/useDragAndDrop'; // Custom hook for drag-and-drop support.
-import { useWorkflowExecution } from './hooks/useWorkflowExecution'; // Custom hook for workflow execution logic.
-import { FooterPanel } from './panels/FooterPanel'; // Panel for displaying execution results and controls.
-import { validateConnection } from './utils/validateConnections'; // Utility function to validate edge connections.
-import { CustomDeletableEdge, CustomDeletableEdgeProps } from './edges/CustomDeletableEdge'; // Custom edge component.
-import { JSX } from 'react/jsx-runtime'; // JSX runtime for type safety.
+import { useWorkflowExecution } from "./hooks/useWorkflowExecution";
 
 export default function App() {
-  // Reference for the React Flow container.
-  const reactFlowWrapper = useRef(null);
+  const { setNodes, setEdges, workflowResults, isExecuting, undo, redo, nodes, edges, reactFlowWrapper } = useGlobalState(); // Access global state
+  const { executeWorkflow } = useWorkflowExecution();
 
-  // React Flow state management.
-  const [reactFlowInstance, setReactFlowInstance] = useState(null);
-  const [nodes, setNodes] = useNodesState(initialNodes);
-  const [edges, setEdges] = useEdgesState(initialEdges);
+  // Load initial nodes and edges when the app loads
+  useEffect(() => {
+    setNodes(initialNodes); // Set initial nodes
+    setEdges(initialEdges); // Set initial edges
+  }, []);
 
-  // Hooks for workflow execution, history management, and drag-and-drop functionality.
-  const { executeWorkflow, workflowResults, isExecuting } = useWorkflowExecution();
-  const { pushToHistory, undo, redo, history, redoStack } = useHistory(nodes, edges);
-  const { onDragOver, onDrop } = useDragAndDrop({
-    reactFlowWrapper,
-    reactFlowInstance,
-    setNodes,
-    getNodes: () => nodes,
-    getEdges: () => edges,
-    pushToHistory,
-  });
-
-  // Deletes an edge by ID.
-  const handleDeleteEdge = useCallback(
-    (id: string) => setEdges((eds) => eds.filter((edge) => edge.id !== id)),
-    [setEdges]
-  );
-
-  // Custom edge types with delete functionality.
-  const edgeTypes = useMemo(
-    () => ({
-      custom: (props: JSX.IntrinsicAttributes & CustomDeletableEdgeProps) => (
-        <CustomDeletableEdge {...props} onDelete={handleDeleteEdge} pushToHistory={pushToHistory} />
-      ),
-    }),
-    [handleDeleteEdge, pushToHistory]
-  );
-
-  // Updates the data of a specific node.
-  const updateNodeData = (nodeId: string, newData: any) => {
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === nodeId
-          ? { ...node, data: { ...node.data, ...newData } }
-          : node
-      )
-    );
-  };
-
-  // Handles connecting two nodes with an edge.
-  const onConnect = useCallback(
-    (connection: any) => {
-      if (!validateConnection(connection, edges, nodes)) {
-        console.error('Invalid connection', connection);
-        return;
-      }
-      pushToHistory(nodes, edges);
-      setEdges((eds) => addEdge({ ...connection, type: 'custom' }, eds));
-    },
-    [nodes, edges, pushToHistory, setEdges]
-  );
+  useEffect(() => {
+  }, [isExecuting]);
 
   // Executes the workflow, iterating over nodes and their connections.
   const runWorkflow = async () => {
@@ -119,60 +59,30 @@ export default function App() {
     );
   };
 
-  // Adds a new node of the specified type.
-  const onAddNode = (type: any) => {
-    const position = reactFlowInstance?.screenToFlowPosition({ x: 600, y: 300 });
-    const newNode = {
-      id: `${type}-${Date.now()}`,
-      type,
-      position,
-      data: { label: `${type} Node` },
-    };
-    setNodes((prev) => [...prev, newNode]);
-  };
 
   return (
     <ReactFlowProvider>
       <main className="flex">
-        {/* Nodes panel for adding new nodes */}
-        <Panel>
-          <NodesPanel onAddNode={onAddNode} />
+      <div className="h-[calc(100vh-40px)] w-dvw" ref={reactFlowWrapper}>
+        {/* NodesPanel for adding and managing nodes */}
+        <Panel position="top-left">
+          <NodesPanel />
         </Panel>
-        
-        {/* Main Flow Canvas */}
-        <div className="h-[calc(100vh-40px)] w-dvw" ref={reactFlowWrapper}>
-          <FlowCanvas
-            nodes={nodes.map(node => ({
-              ...node,
-              data: {
-                ...node.data,
-                updateNodeData,
-                pushToHistory,
-              },
-            }))}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            onNodesChange={(changes) => setNodes((nds) => applyNodeChanges(changes, nds))}
-            onEdgesChange={(changes) => setEdges((eds) => applyEdgeChanges(changes, eds))}
-            onConnect={onConnect}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            runWorkflow={runWorkflow}
-            setReactFlowInstance={setReactFlowInstance}
-            updateNodeData={updateNodeData}
-            pushToHistory={pushToHistory}
-            undo={undo}
-            redo={redo}
-            setNodes={setNodes}
-            setEdges={setEdges}
-            history={history}
-            redoStack={redoStack}
+      {/* Panel for workflow actions (e.g., undo, redo, run). */}
+        <Panel position="top-right">
+          <ActionsPanel
+            undo={undo} // Undo functionality, updates nodes and edges.
+            redo={redo} // Redo functionality, updates nodes and edges.
+            runWorkflow={runWorkflow} // Execute the workflow.
+            canUndo={true} // Enable undo if there's history.
+            canRedo={true} // Enable redo if there's a redo stack.
           />
+        </Panel>
+        {/* FlowCanvas for visualizing the workflow */}
+          <FlowCanvas />
+        {/* FooterPanel for displaying workflow execution results */}
+          <FooterPanel results={workflowResults} isExecuting={isExecuting} />
         </div>
-        
-        {/* Footer panel for workflow execution results */}
-        <FooterPanel results={workflowResults} isExecuting={isExecuting} />
       </main>
     </ReactFlowProvider>
   );

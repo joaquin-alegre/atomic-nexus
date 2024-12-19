@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Handle, Position, NodeProps as ReactFlowNodeProps, useReactFlow } from "@xyflow/react"; // Import React Flow components.
+import React, { useEffect } from "react";
+import { Handle, Position } from "@xyflow/react"; // Import React Flow components.
 import { NodeTemplate } from "../components/templates/NodeTemplate"; // Custom node template component.
 import { FiTrash, FiPlus } from "react-icons/fi"; // Icons for the UI.
 import { executeApiFetchNode } from "../utils/executeApiFetchNode"; // Utility function for executing API fetch requests.
+import { useGlobalState } from "../context/StateContext"; // Global state hook.
 
 interface ApiFetchNodeData {
   url: string; // API endpoint URL.
@@ -12,10 +13,9 @@ interface ApiFetchNodeData {
   headers: { key: string; value: string }[]; // List of headers for the request.
   onExecute?: (inputData: any) => Promise<any>; // Optional execution callback.
   updateNodeData: (nodeId: string, newData: any) => void; // Function to update the node's data.
-  pushToHistory: (nodes: unknown[], edges: unknown[]) => void; // Function to track history for undo/redo.
 }
 
-type NodeProps = ReactFlowNodeProps & {
+type NodeProps = {
   id: string; // Node ID.
   data: ApiFetchNodeData; // Node-specific data.
   selected: boolean; // Whether the node is selected.
@@ -23,37 +23,26 @@ type NodeProps = ReactFlowNodeProps & {
 
 // API Fetch Node component.
 export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
-  const [nodeData, setNodeData] = useState<ApiFetchNodeData>({ ...data }); // State to manage the node's data locally.
-  const reactFlowInstance = useReactFlow(); // React Flow instance for managing nodes and edges.
+  const { setNodes } = useGlobalState(); // Access global state setter for nodes.
 
   // Update the parent node with the execution logic.
   useEffect(() => {
-    if (data.updateNodeData) {
-      data.updateNodeData(id, {
-        onExecute: () =>
-          executeApiFetchNode({
-            url: nodeData.url,
-            method: nodeData.method,
-            queryString: nodeData.queryString,
-            body: nodeData.body,
-            headers: nodeData.headers,
-          }),
-      });
-    }
-  }, [data.updateNodeData, id, nodeData]);
-
-  // Update local state when the external data changes.
-  useEffect(() => {
-    setNodeData({ ...data });
-  }, [data]);
+    data.updateNodeData(id, {
+      onExecute: () =>
+        executeApiFetchNode({
+          url: data.url,
+          method: data.method,
+          queryString: data.queryString,
+          body: data.body,
+          headers: data.headers,
+        }),
+    });
+  }, [data, id]);
 
   // Handle changes to the input fields and update the node's state in React Flow.
   const handleInputChange = (field: keyof ApiFetchNodeData, value: any) => {
-    const updatedData = { ...nodeData, [field]: value };
-    setNodeData(updatedData);
-
-    // Update the node's data in React Flow.
-    reactFlowInstance.setNodes((nodes) =>
+    const updatedData = { ...data, [field]: value };
+    setNodes((nodes) =>
       nodes.map((node) =>
         node.id === id ? { ...node, data: updatedData } : node
       )
@@ -62,19 +51,19 @@ export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
 
   // Add a new header to the list.
   const addHeader = () => {
-    const updatedHeaders = [...nodeData.headers, { key: "", value: "" }];
+    const updatedHeaders = [...data.headers, { key: "", value: "" }];
     handleInputChange("headers", updatedHeaders);
   };
 
   // Remove a header by index.
   const removeHeader = (index: number) => {
-    const updatedHeaders = nodeData.headers.filter((_, i) => i !== index);
+    const updatedHeaders = data.headers.filter((_, i) => i !== index);
     handleInputChange("headers", updatedHeaders);
   };
 
   // Update a specific header's key or value.
   const updateHeader = (index: number, field: "key" | "value", value: string) => {
-    const updatedHeaders = [...nodeData.headers];
+    const updatedHeaders = [...data.headers];
     if (updatedHeaders[index]) {
       updatedHeaders[index][field] = value;
       handleInputChange("headers", updatedHeaders);
@@ -86,7 +75,7 @@ export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
       type="ApiFetch"
       id={id}
       selected={selected}
-      pushToHistory={nodeData.pushToHistory}
+      pushToHistory={() => console.log("Push to history")} // Placeholder for pushToHistory
     >
       {/* Main content of the node */}
       <div className="flex flex-col gap-2 transition-all">
@@ -97,7 +86,7 @@ export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
             type="text"
             className="w-full p-1 border border-neutral-500 rounded"
             placeholder="Enter URL"
-            value={nodeData.url}
+            value={data.url}
             onChange={(e) => handleInputChange("url", e.target.value)}
           />
         </div>
@@ -108,8 +97,8 @@ export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
             Request Method:
           </label>
           <select
-            className="w-full p-1 border border-neutral-500 rounded"
-            value={nodeData.method}
+            className="w-full p-1 border-[1px] border-neutral-500 rounded outline outline-neutral-500 border-r-8 border-transparent"
+            value={data.method}
             onChange={(e) => handleInputChange("method", e.target.value)}
           >
             <option value="GET">GET</option>
@@ -128,19 +117,19 @@ export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
             type="text"
             className="w-full p-1 border border-neutral-500 rounded"
             placeholder="Enter query string"
-            value={nodeData.queryString}
+            value={data.queryString}
             onChange={(e) => handleInputChange("queryString", e.target.value)}
           />
         </div>
 
         {/* Body Input (only for POST/PUT) */}
-        {(nodeData.method === "POST" || nodeData.method === "PUT") && (
+        {(data.method === "POST" || data.method === "PUT") && (
           <div className="flex flex-col gap-1">
             <label className="block text-sm font-normal text-gray-300">Body:</label>
             <textarea
               className="w-full p-2 border border-neutral-500 rounded"
               placeholder="Enter JSON body"
-              value={nodeData.body}
+              value={data.body}
               onChange={(e) => handleInputChange("body", e.target.value)}
             />
           </div>
@@ -148,12 +137,12 @@ export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
 
         {/* Headers Section */}
         <div className="flex flex-col gap-1">
-          {nodeData?.headers?.length > 0 && (
+          {data?.headers?.length > 0 && (
             <label className="block text-sm font-normal text-gray-300">
               Headers:
             </label>
           )}
-          {nodeData?.headers?.map((header, index) => (
+          {data?.headers?.map((header, index) => (
             <div key={index} className="flex flex-row space-x-2">
               {/* Header Key */}
               <input

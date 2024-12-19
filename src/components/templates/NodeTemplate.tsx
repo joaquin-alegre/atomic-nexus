@@ -1,70 +1,79 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { FiPackage, FiCpu, FiTrash, FiCopy, FiClipboard, FiMoreVertical } from "react-icons/fi";
-import { useReactFlow } from "@xyflow/react"; // Import hooks from React Flow for managing nodes and edges.
-import { useCopyPaste } from "../../hooks/useCopyPaste"; // Custom hook for handling copy-paste functionality.
+import { Handle, Position } from "@xyflow/react"; // For input/output handles
+import { useGlobalState } from "../../context/StateContext"; // Import the global state hook
 
 interface NodeTemplateProps {
-  children: React.ReactNode; // Content to be rendered inside the node.
-  type: "ApiFetch" | "ForEach"; // Defines the type of the node.
-  id: string; // Unique identifier for the node.
-  selected: boolean; // Indicates if the node is currently selected.
-  pushToHistory: (nodes: unknown[], edges: unknown[]) => void; // Function to record node/edge changes for undo/redo functionality.
+  children: React.ReactNode; // Content to be rendered inside the node
+  type: "ApiFetch" | "ForEach"; // Defines the type of the node
+  id: string; // Unique identifier for the node
+  selected: boolean; // Indicates if the node is currently selected
 }
 
-// Functional component that represents a node template.
-export const NodeTemplate: React.FC<NodeTemplateProps> = ({ children, type, id, selected, pushToHistory }) => {
-  // React Flow functions for managing nodes and edges.
-  const { deleteElements, setNodes, getNodes, getNode, getEdges } = useReactFlow();
+export const NodeTemplate: React.FC<NodeTemplateProps> = ({ children, type, id, selected }) => {
+  const { nodes, setNodes, edges, setEdges, pushToHistory, copiedNode, setCopiedNode } = useGlobalState();
 
-  // Custom copy-paste hook initialized with nodes and setNodes function.
-  const { copyNode, pasteNode } = useCopyPaste({ setNodes, nodes: getNodes() });
+  const [showMenu, setShowMenu] = useState(false); // State to toggle the visibility of the context menu
+  const menuRef = useRef<HTMLDivElement>(null); // Ref to track the context menu element
 
-  const [showMenu, setShowMenu] = useState(false); // State to toggle the visibility of the context menu.
-  const menuRef = useRef<HTMLDivElement>(null); // Ref to track the context menu element.
-
-  // Function to handle clicks outside of the context menu and close it.
+  // Function to handle clicks outside of the context menu and close it
   const handleOutsideClick = useCallback((event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-      setShowMenu(false); // Close the menu if the click is outside.
+      setShowMenu(false); // Close the menu if the click is outside
     }
   }, []);
 
-  // Effect to add/remove the event listener for outside clicks based on `showMenu`.
+  // Effect to add/remove the event listener for outside clicks based on `showMenu`
   useEffect(() => {
     if (showMenu) document.addEventListener("click", handleOutsideClick);
     return () => document.removeEventListener("click", handleOutsideClick);
   }, [showMenu, handleOutsideClick]);
 
-  // Function to toggle the context menu and select the current node.
+  // Function to toggle the context menu and select the current node
   const toggleMenu = useCallback(
     (e: React.MouseEvent) => {
-      e.stopPropagation(); // Prevent the event from propagating further.
+      e.stopPropagation(); // Prevent the event from propagating further
       setNodes((nodes) =>
         nodes.map((node) => ({
           ...node,
-          selected: node.id === id, // Select the current node by ID.
+          selected: node.id === id, // Select the current node by ID
         }))
       );
-      setShowMenu((prev) => !prev); // Toggle the menu visibility.
+      setShowMenu((prev) => !prev); // Toggle the menu visibility
     },
     [id, setNodes]
   );
 
-  // Function to delete the current node.
+  // Function to delete the current node
   const onDelete = useCallback(() => {
-    deleteElements({ nodes: [{ id }] }); // Remove the node using its ID.
-    pushToHistory(getNodes(), getEdges()); // Update the history after deletion.
-  }, [id, deleteElements, getNodes, getEdges, pushToHistory]);
+    setNodes((nodes) => nodes.filter((node) => node.id !== id)); // Remove the node by ID
+    setEdges((edges) => edges.filter((edge) => edge.source !== id && edge.target !== id)); // Remove associated edges
+    pushToHistory(); // Update the history after deletion
+  }, [id, setNodes, setEdges, pushToHistory]);
 
-  // Function to paste a node near the current node.
-  const onPaste = useCallback(() => {
-    const currentNode = getNode(id);
+  // Function to copy the current node to the clipboard
+  const onCopy = useCallback(() => {
+    const currentNode = nodes.find((node) => node.id === id);
     if (currentNode) {
-      pasteNode({ x: currentNode.position.x + 50, y: currentNode.position.y + 50 }); // Paste node at an offset position.
-      setShowMenu(false); // Close the menu.
-      pushToHistory(getNodes(), getEdges()); // Update the history after pasting.
+      setCopiedNode(currentNode); // Save the node to the clipboard
+      setShowMenu(false); // Close the menu
     }
-  }, [id, pasteNode, getNode, pushToHistory, getNodes, getEdges]);
+  }, [id, nodes, setCopiedNode]);
+
+  // Function to paste a copied node near the current node
+  const onPaste = useCallback(() => {
+    const currentNode = nodes.find((node) => node.id === id);
+    if (currentNode && copiedNode) {
+      const newNode = {
+        ...copiedNode,
+        id: `copy-${Date.now()}`, // Generate a new unique ID
+        position: { x: currentNode.position.x + 50, y: currentNode.position.y + 50 }, // Paste near the current node
+      };
+      setNodes((nodes) => [...nodes, newNode]);
+      pushToHistory(); // Update the history after pasting
+      setShowMenu(false); // Close the menu
+    }
+  }, [id, nodes, copiedNode, setNodes, pushToHistory]);
 
   return (
     <div className="relative flex flex-col gap-1 w-96">
@@ -72,9 +81,7 @@ export const NodeTemplate: React.FC<NodeTemplateProps> = ({ children, type, id, 
       <div
         className={`flex justify-between px-2 py-2 rounded-md ${
           type === "ApiFetch" ? "bg-primary-green" : "bg-primary-blue"
-        } ${
-          selected ? (type === "ApiFetch" ? "shadow-highlight-green" : "shadow-higlight-blue") : ""
-        }`}
+        } ${selected ? (type === "ApiFetch" ? "shadow-highlight-green" : "shadow-higlight-blue") : ""}`}
       >
         {/* Node title with icon */}
         <h1 className="flex items-center gap-2 text-sm font-semibold text-neutral-50">
@@ -95,13 +102,7 @@ export const NodeTemplate: React.FC<NodeTemplateProps> = ({ children, type, id, 
           className="text-sm absolute right-4 top-8 w-40 bg-paper text-white border border-neutral-700 rounded shadow-lg z-10"
         >
           {/* Copy action */}
-          <button
-            onClick={() => {
-              copyNode(); // Trigger the copy action.
-              setShowMenu(false); // Close the menu.
-            }}
-            className="menu-item"
-          >
+          <button onClick={onCopy} className="menu-item">
             <FiCopy /> Copy
           </button>
 
@@ -123,8 +124,12 @@ export const NodeTemplate: React.FC<NodeTemplateProps> = ({ children, type, id, 
           selected ? (type === "ApiFetch" ? "shadow-highlight-green" : "shadow-higlight-blue") : ""
         }`}
       >
-        {children} {/* Render the children (custom node content). */}
+        {children} {/* Render the children (custom node content) */}
       </div>
+
+      {/* Input and Output Handles */}
+      <Handle type="target" position={Position.Left} />
+      <Handle type="source" position={Position.Right} />
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import React, { useRef, useCallback } from "react";
-import { useReactFlow } from "@xyflow/react"; // React Flow hooks for accessing the flow instance.
 import {
   FiSave,
   FiUpload,
@@ -8,13 +7,10 @@ import {
   FiPlay,
 } from "react-icons/fi"; // Icons for the action buttons.
 import { IconButton } from "../components/IconButton"; // Reusable button component with tooltips and icons.
+import { useGlobalState } from "../context/StateContext"; // Use global state for managing nodes and edges.
 
 interface ActionsPanelProps {
-  undo: () => void; // Function to undo the last action.
-  redo: () => void; // Function to redo the last undone action.
   runWorkflow: () => Promise<void>; // Function to execute the workflow.
-  canUndo: boolean; // Boolean indicating if undo is possible.
-  canRedo: boolean; // Boolean indicating if redo is possible.
 }
 
 // Helper function to download a JSON file.
@@ -30,24 +26,27 @@ const downloadJsonFile = (filename: string, data: object) => {
 };
 
 // Actions Panel Component
-export const ActionsPanel: React.FC<ActionsPanelProps> = ({
-  undo,
-  redo,
-  runWorkflow,
-  canUndo,
-  canRedo,
-}) => {
-  const reactFlowInstance = useReactFlow(); // Access the React Flow instance.
+export const ActionsPanel: React.FC<ActionsPanelProps> = ({ runWorkflow }) => {
+  const {
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    undo,
+    redo,
+    reactFlowInstance,
+  } = useGlobalState(); // Access global state.
+
   const fileInputRef = useRef<HTMLInputElement | null>(null); // Ref for the hidden file input.
 
   // Function to save the current flow as a JSON file.
   const handleSave = useCallback(() => {
     const flow = {
-      nodes: reactFlowInstance.getNodes(), // Get all nodes from the React Flow instance.
-      edges: reactFlowInstance.getEdges(), // Get all edges from the React Flow instance.
+      nodes, // Get nodes from the global state.
+      edges, // Get edges from the global state.
     };
     downloadJsonFile("workflow.json", flow); // Save the flow as a JSON file.
-  }, [reactFlowInstance]);
+  }, [nodes, edges]);
 
   // Function to load a flow from a JSON file.
   const handleLoad = useCallback(
@@ -60,8 +59,11 @@ export const ActionsPanel: React.FC<ActionsPanelProps> = ({
         try {
           const text = e.target?.result as string; // Get the file content as text.
           const flow = JSON.parse(text); // Parse the JSON content.
-          if (flow?.nodes) reactFlowInstance.setNodes(flow.nodes); // Set the nodes in React Flow.
-          if (flow?.edges) reactFlowInstance.setEdges(flow.edges); // Set the edges in React Flow.
+          if (flow?.nodes && Array.isArray(flow.nodes)) setNodes(flow.nodes); // Set the nodes if valid.
+          if (flow?.edges && Array.isArray(flow.edges)) setEdges(flow.edges); // Set the edges if valid.
+          if (reactFlowInstance) {
+            reactFlowInstance.fitView(); // Automatically fit the view to the loaded graph.
+          }
         } catch (error) {
           console.error("Failed to load workflow file:", error); // Log an error if the file is invalid.
           alert("Invalid workflow file. Please upload a valid JSON file."); // Show an error message to the user.
@@ -69,22 +71,22 @@ export const ActionsPanel: React.FC<ActionsPanelProps> = ({
       };
       reader.readAsText(file); // Read the file as text.
     },
-    [reactFlowInstance]
+    [setNodes, setEdges, reactFlowInstance]
   );
 
   return (
     <div className="flex space-x-2 bg-transparent p-2 rounded-lg">
       {/* Undo Button */}
       <IconButton
-        onClick={undo}
-        disabled={!canUndo} // Disable the button if undo is not possible.
+        onClick={undo} // Undo the last action.
+        disabled={nodes.length === 0} // Disable if there are no nodes to undo.
         tooltip="Undo" // Tooltip text.
         icon={<FiRotateCcw />} // Undo icon.
       />
       {/* Redo Button */}
       <IconButton
-        onClick={redo}
-        disabled={!canRedo} // Disable the button if redo is not possible.
+        onClick={redo} // Redo the last undone action.
+        disabled={edges.length === 0} // Disable if there are no edges to redo.
         tooltip="Redo" // Tooltip text.
         icon={<FiRotateCw />} // Redo icon.
       />

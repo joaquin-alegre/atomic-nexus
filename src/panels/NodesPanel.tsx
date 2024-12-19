@@ -1,11 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { FiPackage, FiCpu, FiX, FiPlus } from "react-icons/fi"; // Icons for the UI.
 import { AddNodeTemplate } from '../components/templates/AddNodeTemplate'; // Reusable template for node cards.
+import { useGlobalState } from '../context/StateContext'; // Import global state hook.
 
-export const NodesPanel: React.FC<{ onAddNode: (type: string) => void }> = ({ onAddNode }) => {
+export const NodesPanel: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Tracks if the desktop menu is open.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Tracks if the mobile menu is open.
   const menuRef = useRef<HTMLDivElement | null>(null); // Reference to the menu container.
+
+  const { onAddNode } = useGlobalState(); // Access the global state function for adding nodes.
 
   // Toggle the desktop menu visibility.
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
@@ -21,7 +24,7 @@ export const NodesPanel: React.FC<{ onAddNode: (type: string) => void }> = ({ on
 
   // Handle adding a node in mobile menu mode.
   const handleAddNode = (type: string) => {
-    onAddNode(type); // Call the parent-provided function to add a node.
+    onAddNode(type); // Use the global state function to add a node.
     setIsMobileMenuOpen(false); // Close the mobile menu.
   };
 

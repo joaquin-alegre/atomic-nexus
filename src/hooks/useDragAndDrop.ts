@@ -1,22 +1,14 @@
 import { useCallback } from 'react';
-import { Node, ReactFlowInstance, XYPosition } from '@xyflow/react'; // Import necessary types from React Flow.
+import { XYPosition } from '@xyflow/react'; // Import necessary types from React Flow.
+import { useGlobalState } from '../context/StateContext'; // Import global state hook.
 
-interface UseDragAndDropProps {
-    reactFlowWrapper: React.RefObject<HTMLDivElement>; // Reference to the React Flow container DOM element.
-    reactFlowInstance: ReactFlowInstance | null; // React Flow instance for managing nodes and edges.
-    setNodes: (nodesUpdater: (nodes: Node[]) => Node[]) => void; // Function to update the list of nodes.
-    getNodes: () => Node[]; // Function to retrieve the current nodes.
-    getEdges: () => any[]; // Function to retrieve the current edges.
-}
+export function useDragAndDrop() {
+    const {
+        reactFlowWrapper, // React Flow wrapper ref from context.
+        reactFlowInstance, // React Flow instance from context.
+        setNodes // Global setter for nodes.
+    } = useGlobalState(); // Access global state.
 
-// Custom hook to enable drag-and-drop functionality for adding nodes to the React Flow canvas.
-export function useDragAndDrop({
-    reactFlowWrapper,
-    reactFlowInstance,
-    setNodes,
-    getNodes,
-    getEdges
-}: UseDragAndDropProps) {
     // Handler for drag-over events on the React Flow canvas.
     const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault(); // Allow dropping by preventing the default behavior.
@@ -66,17 +58,10 @@ export function useDragAndDrop({
             // Create a new node with the specified type and calculated position.
             const newNode = createNode(type, position);
 
-            // Add the new node to the list of current nodes.
+            // Add the new node to the global state.
             setNodes((currentNodes) => [...currentNodes, newNode]);
         },
-        [
-            reactFlowWrapper,
-            reactFlowInstance,
-            createNode,
-            setNodes,
-            getNodes,
-            getEdges
-        ]
+        [reactFlowWrapper, reactFlowInstance, createNode, setNodes]
     );
 
     // Return the handlers to be used in the component.
