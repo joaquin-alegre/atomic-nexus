@@ -1,11 +1,13 @@
-# Workflow Builder (Atomic Nexus Frontend Developer Test Project)
+# Atomic Nexus - Workflow Builder (Test Project)
+
+![Alt text](https://i.postimg.cc/XY2FrzTX/Atomic.png)
 
 ## Project Description
 
-The Workflow Builder is a visual tool developed by Joaquin Alegre using
-**Vite**, **TypeScript**, **React**, **ReactFlow**, and **Tailwind CSS**. This
-project was completed in **3 days** as part of a technical challenge for a job
-application.
+The Atomic Nexus - Workflow Builder is a visual tool developed by Joaquin Alegre
+using **Vite**, **TypeScript**, **React**, **ReactFlow**, and **Tailwind CSS**.
+This project was completed in **3 days** as part of a technical challenge for a
+job application.
 
 The project reflects a solid effort in understanding and utilizing tools like
 ReactFlow to manage workflows, nodes, and edges. It demonstrates key concepts of
@@ -312,5 +314,3 @@ src/
 
 Contributions are welcome! Please open an issue or submit a pull request to
 suggest improvements or report bugs.
-
-Regards.
