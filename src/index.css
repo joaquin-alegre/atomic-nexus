@@ -1,16 +1,124 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@tailwind base; /* Base styles provided by Tailwind CSS */
+@tailwind components; /* Component styles provided by Tailwind CSS */
+@tailwind utilities; /* Utility styles provided by Tailwind CSS */
 
+/* Root styles */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; /* Font stack for the application */
+    line-height: 1.5; /* Default line height */
+    font-weight: 400; /* Default font weight */
 }
 
+/* Full-height layout for the application */
 html,
 body,
 #root {
-  height: 100%;
-  margin: 0;
+    height: 100%; /* Ensure the root element fills the viewport */
+    margin: 0; /* Remove default margin */
+    @apply bg-[#111111]; /* Apply a dark background using Tailwind */
+}
+
+/* Form elements */
+input,
+textarea,
+select {
+    @apply bg-[#1F1F1F] text-white text-sm; /* Dark background and white text for inputs */
+}
+
+/* Label styles */
+label {
+    @apply text-sm; /* Small text size for labels */
+}
+
+/* Placeholder styles for form elements */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+    @apply text-white pl-1; /* White text and slight padding for placeholders */
+}
+
+/* Hide the React Flow attribution badge */
+.react-flow__attribution {
+    display: none; /* Removes the attribution element from the canvas */
+}
+
+/* Styles for menu items */
+.menu-item {
+    display: flex; /* Align items horizontally */
+    align-items: center; /* Center items vertically */
+    gap: 0.5rem; /* Space between elements */
+    padding: 0.5rem; /* Padding around the item */
+    width: 100%; /* Full width for the menu item */
+    text-align: left; /* Left-align text */
+    transition: background-color 0.2s; /* Smooth transition for hover effect */
+}
+
+/* Hover effect for menu items */
+.menu-item:hover {
+    background-color: #4b4b4b; /* Slightly lighter background on hover */
+}
+
+/* Animated edge styles */
+.animated-edge {
+    fill: none; /* No fill for the edge path */
+    stroke-width: 2px; /* Thickness of the edge */
+    stroke-dasharray: 6, 6; /* Dashed line pattern */
+    animation: dash 1s linear infinite; /* Continuous animation for dash effect */
+}
+
+/* Keyframes for the dash animation */
+@keyframes dash {
+    to {
+        stroke-dashoffset: -24; /* Move the dashes backward for animation */
+    }
+}
+
+/* Default stroke color for edges */
+.stroke-default {
+    stroke: #888; /* Neutral gray color for unselected edges */
+}
+
+/* Stroke color for selected edges */
+.stroke-selected {
+    stroke: #fff; /* White color for selected edges */
+}
+
+/* Hoverable area for edges */
+.edge-hover-area {
+    cursor: pointer; /* Pointer cursor to indicate interactivity */
+}
+
+/* Styles for edge delete button */
+.edge-delete-btn {
+    display: flex; /* Center content inside the button */
+    align-items: center;
+    justify-content: center;
+    background-color: #888; /* Gray background */
+    border: 1px solid #888; /* Border matching the background */
+    border-radius: 50%; /* Circular shape */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    width: 24px; /* Fixed size */
+    height: 24px;
+}
+
+/* Hover effect for the delete button */
+.edge-delete-btn:hover {
+    background-color: white; /* White background on hover */
+    border: 1px solid white; /* White border on hover */
+}
+
+/* Inner delete button styles */
+.delete-btn {
+    width: 100%; /* Fill the parent container */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%; /* Circular shape */
+}
+
+/* Active state for the delete button */
+.delete-btn-active {
+    background-color: white; /* White background when active */
+    border: 1px solid white; /* White border when active */
 }

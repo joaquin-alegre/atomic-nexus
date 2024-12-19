@@ -1,0 +1,130 @@
+{
+    "nodes": [
+      {
+        "id": "a",
+        "selected": false,
+        "type": "ApiFetch",
+        "position": {
+          "x": 0,
+          "y": 300
+        },
+        "data": {
+          "url": "https://jsonplaceholder.typicode.com/users",
+          "method": "GET",
+          "queryString": "",
+          "body": "",
+          "headers": []
+        },
+        "measured": {
+          "width": 384,
+          "height": 305
+        }
+      },
+      {
+        "id": "b",
+        "selected": false,
+        "type": "ForEach",
+        "position": {
+          "x": 450,
+          "y": 600
+        },
+        "data": {
+          "arrayName": "id",
+          "array": []
+        },
+        "measured": {
+          "width": 384,
+          "height": 134
+        }
+      },
+      {
+        "id": "c",
+        "selected": false,
+        "type": "ApiFetch",
+        "position": {
+          "x": 900,
+          "y": 300
+        },
+        "data": {
+          "url": "https://fake-json-api.mock.beeceptor.com/companies",
+          "method": "GET",
+          "queryString": "",
+          "body": "",
+          "headers": []
+        },
+        "measured": {
+          "width": 384,
+          "height": 305
+        }
+      },
+      {
+        "id": "d",
+        "selected": false,
+        "type": "ApiFetch",
+        "position": {
+          "x": 900,
+          "y": 700
+        },
+        "data": {
+          "url": "https://fake-json-api.mock.beeceptor.com/customers",
+          "method": "GET",
+          "queryString": "",
+          "body": "",
+          "headers": []
+        },
+        "measured": {
+          "width": 384,
+          "height": 305
+        }
+      },
+      {
+        "id": "e",
+        "selected": false,
+        "type": "ApiFetch",
+        "position": {
+          "x": 450,
+          "y": 900
+        },
+        "data": {
+          "url": "https://jsonplaceholder.typicode.com/todos",
+          "method": "GET",
+          "queryString": "",
+          "body": "",
+          "headers": []
+        },
+        "measured": {
+          "width": 384,
+          "height": 305
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "a->b",
+        "source": "a",
+        "target": "b",
+        "type": "custom"
+      },
+      {
+        "id": "b_output->c",
+        "source": "b",
+        "target": "c",
+        "sourceHandle": "output",
+        "type": "custom"
+      },
+      {
+        "id": "b_output->d",
+        "source": "b",
+        "target": "d",
+        "sourceHandle": "output",
+        "type": "custom"
+      },
+      {
+        "id": "b_return->d",
+        "source": "b",
+        "target": "e",
+        "sourceHandle": "return",
+        "type": "custom"
+      }
+    ]
+  }
