@@ -56,7 +56,7 @@ export default function App() {
         <CustomDeletableEdge {...props} onDelete={handleDeleteEdge} pushToHistory={pushToHistory} />
       ),
     }),
-    [handleDeleteEdge, pushToHistory]
+    []
   );
 
   // Updates the data of a specific node.

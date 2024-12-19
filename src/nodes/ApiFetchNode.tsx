@@ -108,7 +108,7 @@ export const ApiFetchNode: React.FC<NodeProps> = ({ data, id, selected }) => {
             Request Method:
           </label>
           <select
-            className="w-full p-1 border border-neutral-500 rounded"
+            className="w-full p-1 border-[1px] border-neutral-500 rounded outline outline-neutral-500 border-r-8 border-transparent"
             value={nodeData.method}
             onChange={(e) => handleInputChange("method", e.target.value)}
           >
